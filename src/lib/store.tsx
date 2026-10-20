@@ -14,6 +14,8 @@ export interface WorkoutLog {
 export interface DayLog {
   date: string
   meals: MealEntry[]
+  kcalExpr: string
+  kcalSavedAt?: string
   water: number
   morningWater: boolean
   sleepH: number | null
@@ -57,16 +59,27 @@ export function emptyWorkout(): WorkoutLog {
 }
 
 export function emptyDay(date: string): DayLog {
-  return { date, meals: [], water: 0, morningWater: false, sleepH: null, sleepQ: 0, note: '', school: false, workout: emptyWorkout(), completed: false }
+  return { date, meals: [], kcalExpr: '', water: 0, morningWater: false, sleepH: null, sleepQ: 0, note: '', school: false, workout: emptyWorkout(), completed: false }
 }
 
 const initial: AppState = { version: 1, profile: null, days: {}, measurements: [], plankRecord: 0, customGifs: {} }
 
-export function totals(day: DayLog) {
-  return day.meals.reduce(
-    (a, m) => ({ kcal: a.kcal + m.kcal, protein: a.protein + m.protein, carbs: a.carbs + m.carbs, fat: a.fat + m.fat, sugar: a.sugar + m.sugar }),
-    { kcal: 0, protein: 0, carbs: 0, fat: 0, sugar: 0 },
-  )
+/** "450 + 320 - 50" ya da alt alta yazılmış sayıları toplar */
+export function sumKcal(expr: string) {
+  let total = 0
+  // 1.200 / 1,200 → binlik ayırıcı; kalan , → ondalık
+  const clean = expr.replace(/(\d)[.,](\d{3})(?!\d)/g, '$1$2')
+  for (const m of clean.matchAll(/([+-]?)\s*(\d+(?:[.,]\d+)?)/g)) {
+    const v = parseFloat(m[2].replace(',', '.'))
+    total += m[1] === '-' ? -v : v
+  }
+  return Math.max(0, Math.round(total))
+}
+
+/** Günün kalorisi: hesap makinesine yazılan en son toplam (eski öğün kayıtları için geriye dönük uyum) */
+export function dayKcal(day: DayLog) {
+  if (day.kcalExpr?.trim()) return sumKcal(day.kcalExpr)
+  return day.meals.reduce((a, m) => a + m.kcal, 0)
 }
 
 export function workoutProgress(w: WorkoutLog) {
@@ -80,23 +93,19 @@ export function workoutProgress(w: WorkoutLog) {
 
 /** Günlük başarı puanı (0-100) */
 export function dayScore(day: DayLog) {
-  const t = totals(day)
+  const kcal = dayKcal(day)
   let s = 0
-  // Kalori 30
-  if (t.kcal >= TARGETS.kcal - 100 && t.kcal <= TARGETS.kcalBuffer) s += 30
-  else if (t.kcal >= TARGETS.kcalLow && t.kcal <= TARGETS.kcalHigh) s += 20
-  else if (t.kcal > 0) s += 5
-  // Protein 25
-  s += 25 * Math.min(1, t.protein / TARGETS.protein[0])
-  // Şeker 10
-  if (t.kcal > 0) s += t.sugar <= TARGETS.sugarMax ? 10 : Math.max(0, 10 - (t.sugar - TARGETS.sugarMax) / 2)
-  // Su 15
-  s += 15 * Math.min(1, day.water / TARGETS.waterRange[0])
-  // Uyku 10
-  if (day.sleepH) s += 10 * Math.min(1, day.sleepH / 7.5)
-  // Antrenman 10 (antrenman olmayan günlerde dinlenme puanı 6)
+  // Kalori 45
+  if (kcal >= TARGETS.kcal - 100 && kcal <= TARGETS.kcalBuffer) s += 45
+  else if (kcal >= TARGETS.kcalLow && kcal <= TARGETS.kcalHigh) s += 30
+  else if (kcal > 0) s += 10
+  // Su 20
+  s += 20 * Math.min(1, day.water / TARGETS.waterRange[0])
+  // Uyku 15
+  if (day.sleepH) s += 15 * Math.min(1, day.sleepH / 7.5)
+  // Antrenman 20 (antrenman olmayan günlerde dinlenme puanı 12)
   const wp = workoutProgress(day.workout)
-  s += wp.done > 0 ? 10 * Math.max(0.5, wp.pct) : 6
+  s += wp.done > 0 ? 20 * Math.max(0.5, wp.pct) : 12
   return Math.round(Math.min(100, s))
 }
 

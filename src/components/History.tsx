@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { CalendarDays, ChevronLeft, ChevronRight, Droplets, Dumbbell, Flame, GraduationCap, Moon, Pencil, Star } from 'lucide-react'
 import { EXERCISES } from '../lib/plan'
-import { emptyDay, fromKey, todayKey, totals, useStore, workoutProgress, type DayLog } from '../lib/store'
+import { dayKcal, emptyDay, fromKey, todayKey, useStore, workoutProgress, type DayLog } from '../lib/store'
 import { Card, Pill, fmtTime } from './ui'
 import { kcalStatus } from './Today'
 
@@ -18,7 +18,7 @@ export default function History({ onEdit }: { onEdit: (date: string) => void }) 
     return [...Array(first).fill(null), ...Array.from({ length: n }, (_, i) => todayKey(new Date(cursor.getFullYear(), cursor.getMonth(), i + 1)))]
   }, [cursor])
 
-  const list = useMemo(() => Object.values(state.days).filter((d) => d.completed || d.meals.length || d.note).sort((a, b) => b.date.localeCompare(a.date)), [state.days])
+  const list = useMemo(() => Object.values(state.days).filter((d) => d.completed || dayKcal(d) > 0 || d.note).sort((a, b) => b.date.localeCompare(a.date)), [state.days])
   const selDay: DayLog = state.days[sel] ?? emptyDay(sel)
   const [editNote, setEditNote] = useState(false)
 
@@ -38,7 +38,7 @@ export default function History({ onEdit }: { onEdit: (date: string) => void }) 
           {cells.map((k, i) => {
             if (!k) return <div key={i} />
             const d = state.days[k]
-            const has = d && (d.meals.length || d.note || d.water)
+            const has = d && (dayKcal(d) > 0 || d.note || d.water)
             const isToday = k === todayKey()
             return (
               <button key={k} onClick={() => setSel(k)}
@@ -78,7 +78,7 @@ export default function History({ onEdit }: { onEdit: (date: string) => void }) 
         {list.length === 0 ? <p className="py-6 text-center text-sm text-mute">Henüz kayıtlı gün yok. Bugünü tamamladığında burada görünecek.</p> : (
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             {list.map((d) => {
-              const t = totals(d)
+              const kcal = dayKcal(d)
               const wp = workoutProgress(d.workout)
               return (
                 <button key={d.date} onClick={() => { setSel(d.date); setCursor(new Date(Number(d.date.slice(0, 4)), Number(d.date.slice(5, 7)) - 1, 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
@@ -88,8 +88,7 @@ export default function History({ onEdit }: { onEdit: (date: string) => void }) 
                     {d.completed ? <Pill>{d.score ?? '–'} puan</Pill> : <Pill color="#94A3B8">açık</Pill>}
                   </div>
                   <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[11px] text-mute">
-                    <span style={{ color: kcalStatus(t.kcal).color }}>{t.kcal} kcal</span>
-                    <span>P {Math.round(t.protein)}g</span>
+                    <span style={{ color: kcalStatus(kcal).color }}>{kcal} kcal</span>
                     <span className="text-sky-400">{(d.water / 1000).toFixed(1)} L</span>
                     {d.sleepH ? <span>{d.sleepH} sa</span> : null}
                     {wp.done > 0 && <span className="flex items-center gap-1 text-emerald"><Dumbbell size={11} /> {Math.round(wp.pct * 100)}%</span>}
@@ -107,26 +106,18 @@ export default function History({ onEdit }: { onEdit: (date: string) => void }) 
 }
 
 function DayDetail({ day }: { day: DayLog }) {
-  const t = totals(day)
+  const kcal = dayKcal(day)
   const wp = workoutProgress(day.workout)
-  const st = kcalStatus(t.kcal)
+  const st = kcalStatus(kcal)
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Stat icon={<Flame size={14} />} k="Kalori" v={`${t.kcal}`} color={st.color} />
+        <Stat icon={<Flame size={14} />} k="Kalori" v={`${kcal}`} color={st.color} />
         <Stat icon={<Droplets size={14} />} k="Su" v={`${(day.water / 1000).toFixed(1)} L`} color="#3B82F6" />
         <Stat icon={<Moon size={14} />} k="Uyku" v={day.sleepH ? `${day.sleepH} sa` : '–'} color="#A78BFA" extra={day.sleepQ ? <span className="flex">{Array.from({ length: day.sleepQ }).map((_, i) => <Star key={i} size={9} className="fill-amber text-amber" />)}</span> : null} />
         <Stat icon={<Dumbbell size={14} />} k="Antrenman" v={`${Math.round(wp.pct * 100)}%`} color="#10B981" />
       </div>
-      <div className="font-mono text-[12px] text-mute">P {Math.round(t.protein)}g · K {Math.round(t.carbs)}g · Y {Math.round(t.fat)}g · Şeker {Math.round(t.sugar)}g</div>
-      {day.meals.length > 0 && (
-        <div>
-          <div className="label mb-1.5">Öğünler</div>
-          <ul className="space-y-1 text-[13px]">
-            {day.meals.map((m) => <li key={m.id} className="flex justify-between gap-2"><span className="truncate text-slate-300">{m.name}</span><span className="font-mono text-mute">{m.kcal}</span></li>)}
-          </ul>
-        </div>
-      )}
+      {day.kcalExpr?.trim() && <div className="rounded-xl bg-white/[.03] p-2.5 font-mono text-[12px] text-mute">{day.kcalExpr} = <b className="text-slate-200">{kcal} kcal</b></div>}
       {wp.done > 0 && (
         <div>
           <div className="label mb-1.5">Antrenman detayı</div>

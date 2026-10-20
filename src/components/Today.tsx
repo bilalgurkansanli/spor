@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { AlertTriangle, CheckCircle2, Droplets, Flame, GraduationCap, Lightbulb, Moon, NotebookPen, Plus, Sparkles, Star, Sunrise, Trash2, UtensilsCrossed, X } from 'lucide-react'
-import { COACH_TIPS, QUICK_FOODS, SCHOOL_STRATEGIES, TARGETS, type Meal } from '../lib/plan'
-import { dayScore, fromKey, streak, totals, uid, useStore, workoutProgress } from '../lib/store'
-import { Bar, Card, Pill, Ring, Toggle } from './ui'
+import { AlertTriangle, Calculator, CheckCircle2, Droplets, Eraser, Flame, GraduationCap, Lightbulb, Moon, NotebookPen, Plus, Star, Sunrise, X } from 'lucide-react'
+import { COACH_TIPS, SCHOOL_STRATEGIES, TARGETS, type Meal } from '../lib/plan'
+import { dayKcal, dayScore, fromKey, streak, sumKcal, useStore, workoutProgress } from '../lib/store'
+import { Card, Pill, Ring, Toggle } from './ui'
 
 export function kcalStatus(kcal: number) {
   if (kcal === 0) return { color: '#64748B', label: 'Henüz kayıt yok', tone: 'mute' as const }
@@ -14,26 +14,31 @@ export function kcalStatus(kcal: number) {
   return { color: '#EF4444', label: 'Üst sınır aşıldı (> 2.250 kcal)', tone: 'bad' as const }
 }
 
+const nowTime = () => new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+
 export default function Today() {
   const { day, updateDay, state, date } = useStore()
-  const t = totals(day)
-  const st = kcalStatus(t.kcal)
+  const kcal = dayKcal(day)
+  const st = kcalStatus(kcal)
   const score = dayScore(day)
   const tip = useMemo(() => COACH_TIPS[fromKey(date).getDate() % COACH_TIPS.length], [date])
 
-  const addMeal = (m: Meal) =>
-    updateDay((d) => ({ ...d, meals: [...d.meals, { ...m, id: uid(), time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) }] }))
+  const setExpr = (expr: string) => updateDay((d) => ({ ...d, kcalExpr: expr, kcalSavedAt: nowTime() }))
+  const appendKcal = (n: number) => {
+    const cur = day.kcalExpr.trim() || (kcal ? String(kcal) : '')
+    setExpr(cur ? `${cur} + ${n}` : String(n))
+  }
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
       {/* Kalori halkası */}
-      <Card className="lg:col-span-5" title="Kalori" icon={<Flame size={16} />} action={<Pill color={st.color}>{t.kcal} / {TARGETS.kcal} kcal</Pill>}>
+      <Card className="lg:col-span-5" title="Kalori" icon={<Flame size={16} />} action={<Pill color={st.color}>{kcal} / {TARGETS.kcal} kcal</Pill>}>
         <div className="flex flex-col items-center gap-4 sm:flex-row lg:flex-col xl:flex-row">
-          <Ring value={t.kcal} max={TARGETS.kcalHigh} color={st.color} bufferPct={TARGETS.kcal / TARGETS.kcalHigh} size={190}>
-            <span className="font-mono text-4xl font-bold tabular">{t.kcal}</span>
+          <Ring value={kcal} max={TARGETS.kcalHigh} color={st.color} bufferPct={TARGETS.kcal / TARGETS.kcalHigh} size={190}>
+            <span className="font-mono text-4xl font-bold tabular">{kcal}</span>
             <span className="text-xs text-mute">kcal alındı</span>
             <span className="mt-1 text-[11px] font-semibold" style={{ color: st.color }}>
-              {t.kcal <= TARGETS.kcal ? `${TARGETS.kcal - t.kcal} kaldı` : `+${t.kcal - TARGETS.kcal} tampon`}
+              {kcal <= TARGETS.kcal ? `${TARGETS.kcal - kcal} kaldı` : `+${kcal - TARGETS.kcal} tampon`}
             </span>
           </Ring>
           <div className="w-full space-y-3">
@@ -52,73 +57,30 @@ export default function Today() {
         </div>
       </Card>
 
-      {/* Makrolar */}
-      <Card className="lg:col-span-7" title="Makrolar & Şeker" icon={<Sparkles size={16} />}>
-        <div className="space-y-4">
-          <Macro name="Protein" v={t.protein} range={TARGETS.protein} color="#10B981" hint="En kritik kural — asla kısılmaz" />
-          <Macro name="Karbonhidrat" v={t.carbs} range={TARGETS.carbs} color="#3B82F6" hint="Yulaf, basmati, bulgur, patates, karabuğday" />
-          <Macro name="Yağ" v={t.fat} range={TARGETS.fat} color="#A78BFA" hint="Zeytinyağı, kuruyemiş, yumurta sarısı, avokado" />
-          <div>
-            <div className="mb-1.5 flex items-baseline justify-between text-sm">
-              <span className="font-medium">İlave Şeker</span>
-              <span className="font-mono tabular" style={{ color: t.sugar > TARGETS.sugarMax ? '#EF4444' : '#E5E7EB' }}>
-                {round(t.sugar)} <span className="text-mute">/ maks {TARGETS.sugarMax} g</span>
-              </span>
-            </div>
-            <Bar value={t.sugar} max={TARGETS.sugarMax} color={t.sugar > TARGETS.sugarMax ? '#EF4444' : t.sugar > 15 ? '#F59E0B' : '#10B981'} />
-            <p className="mt-1 text-[11px] text-mute">Taze meyve & sade süt ürünlerindeki doğal şeker kotaya dahil değildir.</p>
-          </div>
-        </div>
+      {/* Kalori hesap makinesi */}
+      <Card className="lg:col-span-7" title="Kalori Girişi" icon={<Calculator size={16} />} action={<Toggle on={day.school} onChange={(v) => updateDay((d) => ({ ...d, school: v }))} label="Okul Günü" />}>
+        <KcalCalculator expr={day.kcalExpr} savedAt={day.kcalSavedAt} fallback={kcal} onChange={setExpr} onAdd={appendKcal} />
+        <AnimatePresence>{day.school && <SchoolMode onAdd={(m) => appendKcal(m.kcal)} />}</AnimatePresence>
       </Card>
 
-      {/* Öğünler */}
-      <Card className="lg:col-span-7" title="Öğünler" icon={<UtensilsCrossed size={16} />} action={<Toggle on={day.school} onChange={(v) => updateDay((d) => ({ ...d, school: v }))} label="Okul Günü" />}>
-        <AnimatePresence>{day.school && <SchoolMode onAdd={addMeal} />}</AnimatePresence>
-        <MealForm onAdd={addMeal} />
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-          {QUICK_FOODS.map((f) => (
-            <button key={f.name} onClick={() => addMeal(f)} className="btn btn-ghost shrink-0 !px-3 !py-1.5 text-xs">
-              <Plus size={12} /> {f.name}
-            </button>
-          ))}
-        </div>
-        <ul className="mt-4 divide-y divide-white/5">
-          <AnimatePresence initial={false}>
-            {day.meals.length === 0 && <li className="py-6 text-center text-sm text-mute">Bugün henüz öğün eklenmedi.</li>}
-            {day.meals.map((m) => (
-              <motion.li key={m.id} layout initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex items-center gap-3 py-2.5">
-                <span className="w-11 font-mono text-[11px] text-mute">{m.time}</span>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{m.name}</div>
-                  <div className="text-[11px] text-mute">P {m.protein}g · K {m.carbs}g · Y {m.fat}g{m.sugar ? ` · Ş ${m.sugar}g` : ''}</div>
-                </div>
-                <span className="font-mono text-sm tabular">{m.kcal}</span>
-                <button aria-label="Sil" onClick={() => updateDay((d) => ({ ...d, meals: d.meals.filter((x) => x.id !== m.id) }))} className="rounded-lg p-1.5 text-mute hover:bg-white/5 hover:text-danger">
-                  <Trash2 size={14} />
-                </button>
-              </motion.li>
-            ))}
-          </AnimatePresence>
-        </ul>
-      </Card>
-
-      <div className="grid gap-4 lg:col-span-5">
-        <Water />
-        <Sleep />
-      </div>
-
-      {/* Not + Tamamla */}
+      {/* Not */}
       <Card className="lg:col-span-7" title="Günlük Not" icon={<NotebookPen size={16} />}>
         <textarea
-          className="input min-h-[120px] resize-y leading-relaxed"
+          className="input min-h-[150px] resize-y leading-relaxed"
           placeholder="Bugün enerjin nasıldı? Antrenman hissiyatı, beslenme notları…"
           value={day.note}
           onChange={(e) => updateDay((d) => ({ ...d, note: e.target.value }))}
         />
       </Card>
 
-      <Card className="lg:col-span-5">
-        <div className="flex h-full flex-col justify-between gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:col-span-5">
+        <Water />
+        <Sleep />
+      </div>
+
+      {/* Koç notu + Tamamla */}
+      <Card className="lg:col-span-12">
+        <div className="grid items-center gap-5 md:grid-cols-2">
           <div className="flex items-start gap-3">
             <Lightbulb size={18} className="mt-0.5 shrink-0 text-amber" />
             <div>
@@ -133,8 +95,6 @@ export default function Today() {
   )
 }
 
-const round = (n: number) => Math.round(n * 10) / 10
-
 function Zone({ c, t, v }: { c: string; t: string; v: string }) {
   return (
     <div className="rounded-lg border border-white/5 bg-white/[.02] px-2 py-1.5">
@@ -145,43 +105,55 @@ function Zone({ c, t, v }: { c: string; t: string; v: string }) {
   )
 }
 
-function Macro({ name, v, range, color, hint }: { name: string; v: number; range: readonly [number, number]; color: string; hint: string }) {
-  const inRange = v >= range[0] && v <= range[1]
-  const over = v > range[1]
-  return (
-    <div>
-      <div className="mb-1.5 flex items-baseline justify-between text-sm">
-        <span className="font-medium">{name} {inRange && <CheckCircle2 size={13} className="ml-1 inline text-emerald" />}</span>
-        <span className="font-mono tabular" style={{ color: over ? '#F59E0B' : '#E5E7EB' }}>
-          {round(v)} <span className="text-mute">/ {range[0]}–{range[1]} g</span>
-        </span>
-      </div>
-      <Bar value={v} max={range[1]} softMax={range[0]} color={color} />
-      <p className="mt-1 text-[11px] text-mute">{hint}</p>
-    </div>
-  )
-}
-
-function MealForm({ onAdd }: { onAdd: (m: Meal) => void }) {
-  const [f, setF] = useState({ name: '', kcal: '', protein: '', carbs: '', fat: '', sugar: '' })
-  const n = (s: string) => Math.max(0, parseFloat(s.replace(',', '.')) || 0)
-  const submit = () => {
-    if (!f.name.trim() && !f.kcal) return
-    onAdd({ name: f.name.trim() || 'Öğün', kcal: Math.round(n(f.kcal)), protein: n(f.protein), carbs: n(f.carbs), fat: n(f.fat), sugar: n(f.sugar) })
-    setF({ name: '', kcal: '', protein: '', carbs: '', fat: '', sugar: '' })
+function KcalCalculator({ expr, savedAt, fallback, onChange, onAdd }: { expr: string; savedAt?: string; fallback: number; onChange: (v: string) => void; onAdd: (n: number) => void }) {
+  const [add, setAdd] = useState('')
+  const total = expr.trim() ? sumKcal(expr) : fallback
+  const items = expr.trim() ? (expr.replace(/(\d)[.,](\d{3})(?!\d)/g, '$1$2').match(/\d+(?:[.,]\d+)?/g) ?? []).length : 0
+  const quickAdd = () => {
+    const n = sumKcal(add)
+    if (!n) return
+    onAdd(n)
+    setAdd('')
   }
-  const field = (k: keyof typeof f, ph: string) => (
-    <input className="input !px-2 text-center font-mono" inputMode="decimal" placeholder={ph} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && submit()} />
-  )
   return (
-    <div className="grid gap-2">
+    <div className="space-y-3">
       <div className="flex gap-2">
-        <input className="input" placeholder="Öğün adı (ör. Tavuklu bulgur)" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && submit()} />
-        <button className="btn btn-primary shrink-0" onClick={submit}><Plus size={16} /> Ekle</button>
+        <input
+          className="input !py-3 font-mono text-lg"
+          inputMode="numeric"
+          placeholder="Yediğin kcal (ör. 450)"
+          value={add}
+          onChange={(e) => setAdd(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && quickAdd()}
+        />
+        <button className="btn btn-primary shrink-0 !px-5" onClick={quickAdd}><Plus size={18} /> Ekle</button>
       </div>
-      <div className="grid grid-cols-5 gap-2">
-        {field('kcal', 'kcal')}{field('protein', 'P g')}{field('carbs', 'K g')}{field('fat', 'Y g')}{field('sugar', 'Şeker')}
+
+      <div className="rounded-2xl border border-white/5 bg-ink/60 p-3">
+        <div className="mb-1.5 flex items-center justify-between">
+          <span className="label">Bugünün hesabı</span>
+          {expr.trim() && (
+            <button className="flex items-center gap-1 text-[11px] text-mute hover:text-danger" onClick={() => { if (confirm('Bugünkü kalori hesabı sıfırlansın mı?')) onChange('') }}>
+              <Eraser size={12} /> Sıfırla
+            </button>
+          )}
+        </div>
+        <textarea
+          className="w-full resize-none bg-transparent font-mono text-[15px] leading-relaxed text-slate-200 outline-none placeholder:text-slate-600"
+          rows={2}
+          placeholder="450 + 320 + 180  (buraya doğrudan da yazabilir, düzeltebilirsin)"
+          value={expr}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <div className="mt-2 flex items-end justify-between gap-3 border-t border-white/5 pt-2">
+          <span className="text-[11px] text-mute">
+            {items ? `${items} kalem` : 'Henüz giriş yok'}
+            {savedAt && expr.trim() ? ` · son kayıt ${savedAt}` : ''}
+          </span>
+          <span className="font-mono text-2xl font-bold tabular">= {total.toLocaleString('tr-TR')} <span className="text-sm text-mute">kcal</span></span>
+        </div>
       </div>
+      <p className="text-[11px] text-mute">Her değişiklik otomatik kaydedilir; günün kalorisi her zaman buradaki en son toplamdır.</p>
     </div>
   )
 }
@@ -190,7 +162,7 @@ function SchoolMode({ onAdd }: { onAdd: (m: Meal) => void }) {
   const [added, setAdded] = useState<string | null>(null)
   return (
     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-      <div className="mb-4 rounded-2xl border border-emerald/20 bg-emerald/[.05] p-3">
+      <div className="mt-4 rounded-2xl border border-emerald/20 bg-emerald/[.05] p-3">
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-emerald"><GraduationCap size={16} /> Okul Günü — 3 Kurtarıcı Strateji</div>
         <div className="grid gap-3 md:grid-cols-3">
           {SCHOOL_STRATEGIES.map((s, i) => (
