@@ -75,6 +75,8 @@ export default function App() {
           {tab === 'settings' && <SettingsPage />}
       </motion.main>
 
+      <BackupReminder onGo={() => setTab('settings')} />
+
       <footer className="mt-10 text-center text-[11px] text-mute">
         Veriler yalnızca bu tarayıcıda saklanır. Bu uygulama tıbbi tavsiye yerine geçmez.
       </footer>
@@ -187,7 +189,7 @@ function SettingsPage() {
           <div className="rounded-xl bg-white/[.03] p-2"><div className="font-mono text-xl font-bold">{Object.keys(state.customGifs).length}</div><div className="text-[11px] text-mute">özel GIF</div></div>
         </div>
         <div className="grid gap-2 sm:grid-cols-2">
-          <button className="btn btn-primary" onClick={() => exportJson(state)}><Download size={16} /> Yedekle (JSON)</button>
+          <button className="btn btn-primary" onClick={() => { exportJson(state); setState((s) => ({ ...s, lastBackup: todayKey() })) }}><Download size={16} /> Yedekle (JSON)</button>
           <div><ImportButton className="w-full" /></div>
         </div>
       </Card>
@@ -195,6 +197,25 @@ function SettingsPage() {
         <p className="mb-4 text-[13px] leading-relaxed text-mute">Çıkış yapınca bu cihazda tekrar şifre sorulur. Verilerin silinmez.</p>
         <button className="btn btn-ghost w-full" onClick={logout}><LogOut size={16} /> Çıkış Yap</button>
       </Card>
+    </div>
+  )
+}
+
+function BackupReminder({ onGo }: { onGo: () => void }) {
+  const { state, setState } = useStore()
+  if (Object.keys(state.days).length < 3) return null
+  const days = state.lastBackup ? Math.floor((Date.now() - fromKey(state.lastBackup).getTime()) / 86400000) : null
+  if (days != null && days < 7) return null
+  return (
+    <div className="mt-6 flex flex-col items-start gap-3 rounded-2xl border border-amber/30 bg-amber/[.07] p-4 text-sm sm:flex-row sm:items-center">
+      <Download size={18} className="shrink-0 text-amber" />
+      <span className="flex-1 text-amber-100/90">
+        {days == null ? 'Henüz hiç yedek almadın.' : `Son yedeğin ${days} gün önce.`} Veriler yalnızca bu tarayıcıda — haftada bir JSON yedeği alıp Drive'a veya kendine mesaj olarak kaydet.
+      </span>
+      <div className="flex gap-2">
+        <button className="btn btn-primary !py-2" onClick={() => { exportJson(state); setState((s) => ({ ...s, lastBackup: todayKey() })) }}><Download size={15} /> Şimdi yedekle</button>
+        <button className="btn btn-ghost !py-2" onClick={onGo}>Ayarlar</button>
+      </div>
     </div>
   )
 }

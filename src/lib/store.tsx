@@ -39,6 +39,7 @@ export interface AppState {
   measurements: Measurement[]
   plankRecord: number
   customGifs: Record<string, string>
+  lastBackup?: string
 }
 
 const KEY = 'recomp-tracker-v1'
@@ -166,6 +167,7 @@ export function normalize(v: unknown): AppState {
     measurements: Array.isArray(s.measurements) ? s.measurements : [],
     plankRecord: s.plankRecord ?? 0,
     customGifs: s.customGifs ?? {},
+    lastBackup: s.lastBackup,
   }
 }
 
@@ -184,6 +186,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, setRaw] = useState<AppState>(() => load() ?? initial)
   const [date, setDate] = useState(todayKey())
   const [ready, setReady] = useState(() => load() !== null)
+
+  // Tarayıcıdan verileri kalıcı saklamasını iste (disk dolsa bile otomatik silinmesin)
+  useEffect(() => { navigator.storage?.persist?.().catch(() => {}) }, [])
 
   // localStorage boşsa (ör. temizlendiyse) IndexedDB'den geri getir
   useEffect(() => {

@@ -6,8 +6,9 @@ export default defineConfig({
   base: '/spor/',
   plugins: [react(), tailwindcss()],
   build: {
-    rollupOptions: {
-      output: { manualChunks: { charts: ['recharts'], motion: ['framer-motion'] } },
-    },
+    // Tek JS paketi: yayın sırasında scripts/encrypt.mjs bu paketi şifreler
+    chunkSizeWarningLimit: 1200,
+    modulePreload: false,
+    rollupOptions: { output: { inlineDynamicImports: true } },
   },
 })

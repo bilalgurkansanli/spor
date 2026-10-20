@@ -13,6 +13,14 @@ npm install
 npm run dev
 ```
 
+## Yayınlama
+
+Canlı sitede uygulama kodu şifreyle AES-256-GCM olarak şifrelenir; doğru şifre girilmeden çözülemez ve çalışmaz. Şifre depoda tutulmaz, yayın sırasında ortam değişkeniyle verilir:
+
+```bash
+APP_PASSWORD="..." npm run deploy
+```
+
 Egzersiz görselleri: [free-exercise-db](https://github.com/yuhonas/free-exercise-db) (Unlicense).
 
 > Bu uygulama tıbbi tavsiye yerine geçmez.

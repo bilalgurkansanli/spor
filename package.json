@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:secure": "npm run build && node scripts/encrypt.mjs",
+    "deploy": "npm run build:secure && node scripts/deploy.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
