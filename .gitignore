@@ -1,0 +1,8 @@
+node_modules
+dist
+*.local
+# planlama notları (kişisel veriler içerir, yayınlanmaz)
+claude_code_*.md
+detayl_*.md
+.claude
+*.tsbuildinfo
