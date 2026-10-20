@@ -1,11 +1,12 @@
 import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { CalendarDays, ChevronLeft, ChevronRight, Download, Dumbbell, Flame, LayoutDashboard, LineChart, Settings, Target, Upload } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ChevronRight, Download, Dumbbell, Flame, LayoutDashboard, LineChart, LogOut, Settings, Target, Upload } from 'lucide-react'
 import Today from './components/Today'
 import Workout from './components/Workout'
 import Progress from './components/Progress'
 import History from './components/History'
 import { Card } from './components/ui'
+import { logout } from './components/Lock'
 import { exportJson, fromKey, normalize, streak, todayKey, useStore, type Profile } from './lib/store'
 import { TARGETS } from './lib/plan'
 
@@ -189,6 +190,10 @@ function SettingsPage() {
           <button className="btn btn-primary" onClick={() => exportJson(state)}><Download size={16} /> Yedekle (JSON)</button>
           <div><ImportButton className="w-full" /></div>
         </div>
+      </Card>
+      <Card title="Oturum" icon={<LogOut size={16} />}>
+        <p className="mb-4 text-[13px] leading-relaxed text-mute">Çıkış yapınca bu cihazda tekrar şifre sorulur. Verilerin silinmez.</p>
+        <button className="btn btn-ghost w-full" onClick={logout}><LogOut size={16} /> Çıkış Yap</button>
       </Card>
     </div>
   )
