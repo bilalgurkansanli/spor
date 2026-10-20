@@ -6,3 +6,5 @@ claude_code_*.md
 detayl_*.md
 .claude
 *.tsbuildinfo
+.vapid.json
+bildirim-kurulum.txt

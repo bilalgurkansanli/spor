@@ -64,3 +64,12 @@ input[type=number] { -moz-appearance: textfield; }
 @keyframes pulse-glow { 0%,100% { opacity: .35 } 50% { opacity: 1 } }
 .muscle-glow { animation: pulse-glow 1.6s ease-in-out infinite; }
 @keyframes wave { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+
+button, a, input, textarea, label { touch-action: manipulation; }
+@media (max-width: 639px) {
+  .input { font-size: 16px; }
+  .card { border-radius: 1.1rem; }
+}
+@media (display-mode: standalone) {
+  body { overscroll-behavior-y: none; }
+}

@@ -1,0 +1,40 @@
+name: Hatırlatma bildirimleri
+
+on:
+  schedule:
+    - cron: '45 2 * * *'   # 05:45 İstanbul → script 06:00'ı bekler
+    - cron: '45 17 * * *'  # 20:45 İstanbul → script 21:00'ı bekler
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: Hangi bildirim
+        type: choice
+        options: [morning, night]
+        default: morning
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --ignore-scripts
+      - run: node scripts/send-push.mjs
+        env:
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          PUSH_SUBSCRIPTION: ${{ secrets.PUSH_SUBSCRIPTION }}
+          KIND: ${{ github.event.inputs.kind || 'auto' }}
+          WAIT: ${{ github.event_name == 'schedule' }}
+      # GitHub, 60 gün işlem olmayan depolarda zamanlanmış işleri kapatır; her çalışmada yeniden etkinleştir
+      - name: Zamanlayıcıyı canlı tut
+        if: always()
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/reminders.yml/enable" || true
+        env:
+          GH_TOKEN: ${{ github.token }}

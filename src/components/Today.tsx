@@ -33,22 +33,22 @@ export default function Today() {
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
       {/* Kalori halkası */}
       <Card className="lg:col-span-5" title="Kalori" icon={<Flame size={16} />} action={<Pill color={st.color}>{kcal} / {TARGETS.kcal} kcal</Pill>}>
-        <div className="flex flex-col items-center gap-4 sm:flex-row lg:flex-col xl:flex-row">
-          <Ring value={kcal} max={TARGETS.kcalHigh} color={st.color} bufferPct={TARGETS.kcal / TARGETS.kcalHigh} size={190}>
-            <span className="font-mono text-4xl font-bold tabular">{kcal}</span>
+        <div className="flex items-center gap-4 lg:flex-col xl:flex-row">
+          <Ring value={kcal} max={TARGETS.kcalHigh} color={st.color} bufferPct={TARGETS.kcal / TARGETS.kcalHigh} size={typeof window !== 'undefined' && window.innerWidth < 640 ? 136 : 190} stroke={typeof window !== 'undefined' && window.innerWidth < 640 ? 11 : 14}>
+            <span className="font-mono text-3xl font-bold tabular sm:text-4xl">{kcal}</span>
             <span className="text-xs text-mute">kcal alındı</span>
             <span className="mt-1 text-[11px] font-semibold" style={{ color: st.color }}>
-              {kcal <= TARGETS.kcal ? `${TARGETS.kcal - kcal} kaldı` : `+${kcal - TARGETS.kcal} tampon`}
+              {kcal <= TARGETS.kcal ? `${TARGETS.kcal - kcal} kaldı` : kcal <= TARGETS.kcalBuffer ? `+${kcal - TARGETS.kcal} tampon` : `+${kcal - TARGETS.kcal} fazla`}
             </span>
           </Ring>
-          <div className="w-full space-y-3">
-            <div className="rounded-xl border border-white/5 bg-white/[.03] p-3 text-sm" style={{ color: st.color }}>
+          <div className="min-w-0 flex-1 space-y-3 lg:w-full">
+            <div className="rounded-xl border border-white/5 bg-white/[.03] p-2.5 text-[13px] sm:p-3 sm:text-sm" style={{ color: st.color }}>
               <div className="flex items-start gap-2">
                 {st.tone === 'bad' || st.tone === 'warn' ? <AlertTriangle size={16} className="mt-0.5 shrink-0" /> : <CheckCircle2 size={16} className="mt-0.5 shrink-0" />}
                 <span className="font-medium">{st.label}</span>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-center text-[11px]">
+            <div className="grid grid-cols-1 gap-1.5 text-center text-[11px] min-[420px]:grid-cols-3 sm:gap-2">
               <Zone c="#10B981" t="Hedef" v="2.000" />
               <Zone c="#F59E0B" t="Tampon" v="2.000–2.200" />
               <Zone c="#EF4444" t="Sınır" v="> 2.250" />
@@ -63,6 +63,11 @@ export default function Today() {
         <AnimatePresence>{day.school && <SchoolMode onAdd={(m) => appendKcal(m.kcal)} />}</AnimatePresence>
       </Card>
 
+      <div className="grid grid-cols-1 gap-4 lg:col-span-5">
+        <Water />
+        <Sleep />
+      </div>
+
       {/* Not */}
       <Card className="lg:col-span-7" title="Günlük Not" icon={<NotebookPen size={16} />}>
         <textarea
@@ -72,11 +77,6 @@ export default function Today() {
           onChange={(e) => updateDay((d) => ({ ...d, note: e.target.value }))}
         />
       </Card>
-
-      <div className="grid grid-cols-1 gap-4 lg:col-span-5">
-        <Water />
-        <Sleep />
-      </div>
 
       {/* Koç notu + Tamamla */}
       <Card className="lg:col-span-12">
@@ -121,7 +121,8 @@ function KcalCalculator({ expr, savedAt, fallback, onChange, onAdd }: { expr: st
         <input
           className="input !py-3 font-mono text-lg"
           inputMode="numeric"
-          placeholder="Yediğin kcal (ör. 450)"
+          enterKeyHint="done"
+          placeholder="kcal (ör. 450)"
           value={add}
           onChange={(e) => setAdd(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && quickAdd()}
@@ -150,7 +151,7 @@ function KcalCalculator({ expr, savedAt, fallback, onChange, onAdd }: { expr: st
             {items ? `${items} kalem` : 'Henüz giriş yok'}
             {savedAt && expr.trim() ? ` · son kayıt ${savedAt}` : ''}
           </span>
-          <span className="font-mono text-2xl font-bold tabular">= {total.toLocaleString('tr-TR')} <span className="text-sm text-mute">kcal</span></span>
+          <span className="whitespace-nowrap font-mono text-xl font-bold tabular sm:text-2xl">= {total.toLocaleString('tr-TR')} <span className="text-sm text-mute">kcal</span></span>
         </div>
       </div>
       <p className="text-[11px] text-mute">Her değişiklik otomatik kaydedilir; günün kalorisi her zaman buradaki en son toplamdır.</p>

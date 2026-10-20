@@ -1,0 +1,24 @@
+// Uygulama ve bildirim ikonlarını SVG'den PNG olarak üretir (tek seferlik).
+import sharp from 'sharp'
+
+const flame = (color, sw = 2) =>
+  `<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>`
+
+const app = (pad) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10B981"/><stop offset="1" stop-color="#0D9488"/></linearGradient></defs>
+  <rect width="512" height="512" fill="#090D16"/>
+  <rect x="${pad}" y="${pad}" width="${512 - 2 * pad}" height="${512 - 2 * pad}" rx="${(512 - 2 * pad) * 0.24}" fill="url(#g)"/>
+  <g transform="translate(${256 - (512 - 2 * pad) * 0.3} ${256 - (512 - 2 * pad) * 0.3}) scale(${((512 - 2 * pad) * 0.6) / 24})">${flame('#090D16', 2.2)}</g>
+</svg>`
+
+const badge = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">${flame('#FFFFFF', 2.6)}</svg>`
+
+const out = [
+  [app(40), 'icon-192.png', 192],
+  [app(40), 'icon-512.png', 512],
+  [app(96), 'icon-maskable-512.png', 512],
+  [app(40), 'apple-touch-icon.png', 180],
+  [badge, 'badge-96.png', 96],
+]
+for (const [svg, name, size] of out) await sharp(Buffer.from(svg)).resize(size, size).png().toFile(`public/icons/${name}`)
+console.log('ikonlar üretildi')

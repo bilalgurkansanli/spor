@@ -153,7 +153,7 @@ function ExerciseCard({ ex, idx, open, onToggle, sets, onSet, onDone }: {
           <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
             <div className="grid gap-4 border-t border-white/5 p-4 sm:grid-cols-[minmax(0,240px)_1fr] sm:p-5">
               <div className="space-y-2">
-                <ExerciseAnimator dbId={ex.dbId} customGif={custom} muscles={ex.muscles} motion={ex.motion} className="aspect-square w-full" />
+                <ExerciseAnimator dbId={ex.dbId} customGif={custom} muscles={ex.muscles} motion={ex.motion} className="mx-auto aspect-[4/3] w-full sm:aspect-square" />
                 <div className="grid grid-cols-2 gap-2">
                   <a href={ex.youtube} target="_blank" rel="noreferrer" className="btn btn-ghost !px-2 !py-2 text-xs"><Youtube size={14} className="text-danger" /> Formu Gör</a>
                   <button onClick={() => setGifEdit(!gifEdit)} className="btn btn-ghost !px-2 !py-2 text-xs"><Link2 size={14} /> GIF Değiştir</button>

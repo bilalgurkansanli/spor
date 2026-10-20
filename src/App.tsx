@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { CalendarDays, ChevronLeft, ChevronRight, Download, Dumbbell, Flame, LayoutDashboard, LineChart, LogOut, Settings, Target, Upload } from 'lucide-react'
 import Today from './components/Today'
@@ -7,6 +7,7 @@ import Progress from './components/Progress'
 import History from './components/History'
 import { Card } from './components/ui'
 import { logout } from './components/Lock'
+import Notifications from './components/Notifications'
 import { exportJson, fromKey, normalize, streak, todayKey, useStore, type Profile } from './lib/store'
 import { TARGETS } from './lib/plan'
 
@@ -20,8 +21,23 @@ const TABS = [
 type Tab = (typeof TABS)[number]['id']
 
 export default function App() {
-  const { state, date, setDate } = useStore()
+  const { state, date, setDate, updateDay } = useStore()
   const [tab, setTab] = useState<Tab>('today')
+
+  // Bildirimdeki "500 ml içtim" düğmesi: ?do=morning-water ile açılış veya açık uygulamaya mesaj
+  useEffect(() => {
+    const tickWater = () => {
+      const today = todayKey()
+      setDate(today)
+      setTab('today')
+      updateDay((d) => (d.morningWater ? d : { ...d, morningWater: true, water: d.water + 500 }), today)
+    }
+    const params = new URLSearchParams(location.search)
+    if (params.get('do') === 'morning-water') { tickWater(); history.replaceState(null, '', location.pathname) }
+    const onMsg = (e: MessageEvent) => { if (e.data?.do === 'morning-water') tickWater() }
+    navigator.serviceWorker?.addEventListener('message', onMsg)
+    return () => navigator.serviceWorker?.removeEventListener('message', onMsg)
+  }, [setDate, updateDay])
 
   if (!state.profile) return <Onboarding />
 
@@ -31,7 +47,7 @@ export default function App() {
 
   return (
     <div className="mx-auto min-h-dvh max-w-7xl px-4 pb-28 sm:px-6 lg:pb-12">
-      <header className="sticky top-0 z-30 -mx-4 mb-5 border-b border-white/5 bg-ink/80 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6">
+      <header className="sticky top-0 z-30 -mx-4 mb-4 border-b border-white/5 bg-ink/80 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl sm:-mx-6 sm:mb-5 sm:px-6">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald to-teal-600 shadow-[0_0_20px_-4px_#10B981]">
@@ -193,6 +209,7 @@ function SettingsPage() {
           <div><ImportButton className="w-full" /></div>
         </div>
       </Card>
+      <Notifications />
       <Card title="Oturum" icon={<LogOut size={16} />}>
         <p className="mb-4 text-[13px] leading-relaxed text-mute">Çıkış yapınca bu cihazda tekrar şifre sorulur. Verilerin silinmez.</p>
         <button className="btn btn-ghost w-full" onClick={logout}><LogOut size={16} /> Çıkış Yap</button>
