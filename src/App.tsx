@@ -55,7 +55,6 @@ export default function App() {
             </div>
             <div className="leading-tight">
               <div className="text-[15px] font-bold tracking-tight">Recomp</div>
-              <div className="hidden whitespace-nowrap text-[11px] text-mute sm:block">Diyetisyen & Antrenör</div>
             </div>
           </div>
 
@@ -92,10 +91,6 @@ export default function App() {
       </motion.main>
 
       <BackupReminder onGo={() => setTab('settings')} />
-
-      <footer className="mt-10 text-center text-[11px] text-mute">
-        Veriler yalnızca bu tarayıcıda saklanır. Bu uygulama tıbbi tavsiye yerine geçmez.
-      </footer>
 
       {/* Mobil alt navigasyon */}
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/5 bg-ink/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
@@ -138,9 +133,9 @@ function Onboarding() {
   const { setState } = useStore()
   const features = [
     ['🎯', `${TARGETS.kcal.toLocaleString('tr-TR')} kcal hedef + tampon bölge`],
-    ['🥩', '165–180 g protein · ≤ 20 g ilave şeker'],
+    ['🧮', 'Kalori hesap makinesi · tampon bölge uyarıları'],
     ['💧', '3.5 L su · 8 saat uyku takibi'],
-    ['🏋️', '12 hareketlik full body + 30 dk Zone 2'],
+    ['🏋️', '10 hareketlik full body + 30 dk kardiyo'],
     ['📏', 'Kilo + mezura recomposition analizi'],
     ['🎓', 'Okul günü kurtarıcı menüleri'],
   ]
@@ -198,7 +193,6 @@ function SettingsPage() {
         <ProfileForm initial={state.profile!} cta="Güncelle" onSave={(p) => setState((s) => ({ ...s, profile: p }))} />
       </Card>
       <Card title="Yedekle / Geri Yükle" icon={<Download size={16} />}>
-        <p className="mb-4 text-[13px] leading-relaxed text-mute">Tüm veriler bu tarayıcıda (LocalStorage + IndexedDB) otomatik kaydedilir. Telefon değiştirirken veya tarayıcı verilerini temizlemeden önce JSON yedeği al.</p>
         <div className="mb-4 grid grid-cols-3 gap-2 text-center">
           <div className="rounded-xl bg-white/[.03] p-2"><div className="font-mono text-xl font-bold">{days}</div><div className="text-[11px] text-mute">tamamlanan gün</div></div>
           <div className="rounded-xl bg-white/[.03] p-2"><div className="font-mono text-xl font-bold">{state.measurements.length}</div><div className="text-[11px] text-mute">ölçüm</div></div>
@@ -211,7 +205,6 @@ function SettingsPage() {
       </Card>
       <Notifications />
       <Card title="Oturum" icon={<LogOut size={16} />}>
-        <p className="mb-4 text-[13px] leading-relaxed text-mute">Çıkış yapınca bu cihazda tekrar şifre sorulur. Verilerin silinmez.</p>
         <button className="btn btn-ghost w-full" onClick={logout}><LogOut size={16} /> Çıkış Yap</button>
       </Card>
     </div>

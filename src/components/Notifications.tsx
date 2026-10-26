@@ -48,7 +48,6 @@ export default function Notifications() {
           <div><div className="font-mono text-sm font-bold">21:00</div><div className="text-[12px] text-mute">Uykuya hazırlan · günü tamamla</div></div>
         </div>
       </div>
-      <p className="mb-4 text-[12px] text-mute">İstanbul saati (GMT+3). Uygulama kapalıyken de gelir.</p>
 
       {!supported ? (
         <p className="rounded-xl bg-amber/10 p-3 text-sm text-amber">Bu tarayıcı bildirim desteklemiyor. Android'de Chrome ile aç ve ana ekrana ekle.</p>

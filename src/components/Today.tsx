@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { AlertTriangle, Calculator, CheckCircle2, Droplets, Eraser, Flame, GraduationCap, Lightbulb, Moon, NotebookPen, Plus, Star, Sunrise, X } from 'lucide-react'
-import { COACH_TIPS, SCHOOL_STRATEGIES, TARGETS, type Meal } from '../lib/plan'
-import { dayKcal, dayScore, fromKey, streak, sumKcal, useStore, workoutProgress } from '../lib/store'
+import { AlertTriangle, Calculator, CheckCircle2, Droplets, Eraser, Flame, GraduationCap, Moon, NotebookPen, Plus, Star, Sunrise, X } from 'lucide-react'
+import { SCHOOL_STRATEGIES, TARGETS, type Meal } from '../lib/plan'
+import { dayKcal, dayScore, streak, sumKcal, useStore, workoutProgress } from '../lib/store'
 import { Card, Pill, Ring, Toggle } from './ui'
 
 export function kcalStatus(kcal: number) {
@@ -17,11 +17,10 @@ export function kcalStatus(kcal: number) {
 const nowTime = () => new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
 
 export default function Today() {
-  const { day, updateDay, state, date } = useStore()
+  const { day, updateDay, state } = useStore()
   const kcal = dayKcal(day)
   const st = kcalStatus(kcal)
   const score = dayScore(day)
-  const tip = useMemo(() => COACH_TIPS[fromKey(date).getDate() % COACH_TIPS.length], [date])
 
   const setExpr = (expr: string) => updateDay((d) => ({ ...d, kcalExpr: expr, kcalSavedAt: nowTime() }))
   const appendKcal = (n: number) => {
@@ -78,18 +77,8 @@ export default function Today() {
         />
       </Card>
 
-      {/* Koç notu + Tamamla */}
       <Card className="lg:col-span-12">
-        <div className="grid items-center gap-5 md:grid-cols-2">
-          <div className="flex items-start gap-3">
-            <Lightbulb size={18} className="mt-0.5 shrink-0 text-amber" />
-            <div>
-              <div className="text-sm font-semibold">Koç Notu · {tip.title}</div>
-              <p className="mt-1 text-[13px] leading-relaxed text-mute">{tip.body}</p>
-            </div>
-          </div>
-          <CompleteDay score={score} streakN={streak(state.days)} />
-        </div>
+        <CompleteDay score={score} streakN={streak(state.days)} />
       </Card>
     </div>
   )
@@ -154,7 +143,6 @@ function KcalCalculator({ expr, savedAt, fallback, onChange, onAdd }: { expr: st
           <span className="whitespace-nowrap font-mono text-xl font-bold tabular sm:text-2xl">= {total.toLocaleString('tr-TR')} <span className="text-sm text-mute">kcal</span></span>
         </div>
       </div>
-      <p className="text-[11px] text-mute">Her değişiklik otomatik kaydedilir; günün kalorisi her zaman buradaki en son toplamdır.</p>
     </div>
   )
 }

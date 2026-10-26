@@ -34,7 +34,6 @@ export interface Exercise {
   dbId: string
   muscles: Muscle[]
   motion: Motion
-  isPlank?: boolean
   youtube: string
 }
 
@@ -44,14 +43,14 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'leg-press', name: 'Lever Horizontal Leg Press', target: 'Ön Bacak & Kalça', sets: 3, reps: '10-12',
     start: '60 kg (kademeli artır)', startKg: 60, rest: 90, restLabel: '90 sn',
-    note: 'En büyük kas grubu; GH ve testosteron tepkisini başlatır. Dizleri tam kilitleme.',
+    note: 'Ayakları omuz genişliğinde koy, dizleri ayak uçlarıyla aynı yöne it. En üstte dizleri tam kilitleme.',
     dbId: 'Leg_Press', muscles: ['quads', 'glutes'], motion: 'press', youtube: yt('horizontal leg press'),
   },
   {
-    id: 'seated-leg-curl', name: 'Seated Leg Curl', target: 'Arka Bacak (Hamstring)', sets: 3, reps: '12',
-    start: '40-50 kg', startKg: 40, rest: 75, restLabel: '60-90 sn',
-    note: 'Lying yerine Seated seçildi: kalça bükülü olduğu için kas uzamış pozisyonda gerilir, maksimum hipertrofi sağlar ve beli korur. Menteşeyi dizle hizala, üst pedi sıkıca kilitle, negatifi 2-3 saniyede yavaşça bırak.',
-    dbId: 'Seated_Leg_Curl', muscles: ['hamstrings'], motion: 'curl', youtube: yt('seated leg curl'),
+    id: 'lying-leg-curl', name: 'Lying Leg Curl', target: 'Arka Bacak (Hamstring)', sets: 3, reps: '10-12',
+    start: '30-40 kg', startKg: 30, rest: 75, restLabel: '60-90 sn',
+    note: 'Dizleri pedin hemen dışında bırak, makine menteşesiyle hizala. Kalçayı pede bastır, beli kamburlaştırma. Topukları kalçaya çek, 2-3 saniyede yavaşça indir.',
+    dbId: 'Lying_Leg_Curls', muscles: ['hamstrings'], motion: 'curl', youtube: yt('lying leg curl'),
   },
   {
     id: 'chest-press', name: 'Lever Chest Press', target: 'Göğüs (Ana İtiş)', sets: 3, reps: '8-12',
@@ -62,7 +61,7 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'lat-pulldown', name: 'Lat Pulldown', target: 'Sırt / Kanat (Dikey Çekiş)', sets: 3, reps: '10-12',
     start: '50-60 kg', startKg: 50, rest: 90, restLabel: '90 sn',
-    note: 'Sırtı genişletmek ve V-üçgen formunu oluşturmak için. Göğsü kabartarak çeneye/üst göğse çek.',
+    note: 'Göğsü kabart, barı çeneye / üst göğse çek. Dirsekleri aşağı ve geriye sür, geriye yaslanma.',
     dbId: 'Wide-Grip_Lat_Pulldown', muscles: ['lats', 'biceps'], motion: 'pull', youtube: yt('lat pulldown'),
   },
   {
@@ -80,7 +79,7 @@ export const EXERCISES: Exercise[] = [
   {
     id: 'lateral-raise', name: 'Dumbbell Lateral Raise', target: 'Yan Omuz', sets: 3, reps: '12-15',
     start: '5-7.5 kg', startKg: 5, rest: 60, restLabel: '60 sn',
-    note: 'Omuz genişliği için tek başına yeterlidir. Trapezleri katmadan, dirsekleri hafif kırık yana aç.',
+    note: 'Dirsekleri hafif kırık tut, omuz hizasına kadar yana aç. Omuzları kulağa çekme, kontrollü indir.',
     dbId: 'Side_Lateral_Raise', muscles: ['delts'], motion: 'raise', youtube: yt('dumbbell lateral raise'),
   },
   {
@@ -100,18 +99,6 @@ export const EXERCISES: Exercise[] = [
     start: 'Vücut ağırlığı', startKg: null, rest: 60, restLabel: '60 sn',
     note: 'Sallanmadan bacakları düz şekilde kaldırırken leğen kemiğini hafifçe yukarı kıvır.',
     dbId: 'Hanging_Leg_Raise', muscles: ['lowerabs', 'abs'], motion: 'legraise', youtube: yt('hanging straight leg raise ab straps'),
-  },
-  {
-    id: 'decline-crunch', name: 'Decline Weighted Crunch', target: 'Üst & Orta Karın Hipertrofisi', sets: 3, reps: '12-15',
-    start: '5-10 kg plaka', startKg: 5, rest: 60, restLabel: '60 sn',
-    note: 'Baklavaları kalınlaştırmak için ağırlıkla yapılır. Kalçadan tam kalkma; göğüs kafesini leğen kemiğine doğru büküp tepede 1 sn sık.',
-    dbId: 'Decline_Crunch', muscles: ['abs'], motion: 'crunch', youtube: yt('decline weighted crunch'),
-  },
-  {
-    id: 'plank', name: 'Plank (Finisher)', target: 'İç Korse (Transvers Abdominis)', sets: 1, reps: 'Maks. süre',
-    start: 'Vücut ağırlığı', startKg: null, rest: 0, restLabel: '—',
-    note: 'Antrenman bitiricisi. Beli çukurlaştırmadan karın ve kalçayı sıkarak tükenişe kadar bekle.',
-    dbId: 'Plank', muscles: ['core', 'abs'], motion: 'hold', isPlank: true, youtube: yt('plank'),
   },
 ]
 
@@ -208,12 +195,8 @@ export function projectionAt(start: number, target: number, week: number) {
 
 export const round1 = (n: number) => Math.round(n * 10) / 10
 
-export const COACH_TIPS = [
-  { title: 'Su Diyeti / OMAD neden yok?', body: 'Uzun açlıklar kas protein sentezini (MPS) durdurur; vücut enerjiyi kastan karşılamaya başlar. Recomp için proteini gün içine 35-45 g\'lık öğünlerle yay.' },
-  { title: 'Upright Row neden çıkarıldı?', body: 'Dumbbell Upright Row omuzu iç rotasyonda yukarı kaldırır; supraspinatus tendonu sıkışır (impingement). Yan omuz için Lateral Raise tek başına yeterli ve güvenli.' },
-  { title: 'Kardiyo neden sonda?', body: 'Ağırlık sonrası glikojen depoları azaldığı için Zone 2 kardiyoda yağ kullanımı artar; önce yapılırsa ağırlıktaki güç düşer.' },
-  { title: 'Tartı yalan söyleyebilir', body: 'Kas kazanırken yağ yakıyorsan kilo sabit kalabilir. Mezurada bel küçülüyorsa doğru yoldasın.' },
-  { title: 'Protein kısılmaz', body: 'Kalori kısılsa bile 165-180 g protein korunur. Kas kaybını önleyen en kritik kural budur.' },
-  { title: 'Uyku = Anabolik pencere', body: 'Büyüme hormonunun büyük kısmı derin uykuda salgılanır. 8 saatin altı kortizolü ve iştahı artırır.' },
-  { title: 'Şeker kotası', body: 'Paketli gıda, çikolata, gazlı içecek ve hazır soslar 20 g kotaya dahil. Taze meyve ve sade süt ürünlerindeki doğal şeker dahil değil.' },
-]
+// Programdan çıkarılan hareketler — geçmiş günlerdeki kayıtlar okunabilsin diye
+export const LEGACY_EXERCISES: Record<string, string> = {
+  'seated-leg-curl': 'Seated Leg Curl',
+  'decline-crunch': 'Decline Weighted Crunch',
+}

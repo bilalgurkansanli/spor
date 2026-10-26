@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Activity, Bike, Check, ChevronDown, Dumbbell, Footprints, Link2, Pause, Play, RotateCcw, ShieldAlert, Timer, Trophy, Youtube, X } from 'lucide-react'
+import { Activity, Bike, Check, ChevronDown, Dumbbell, Footprints, Link2, ListOrdered, Pause, Play, RotateCcw, Timer, Youtube, X } from 'lucide-react'
 import { CARDIO, EXERCISES, type Exercise } from '../lib/plan'
-import { useStore, workoutProgress, type SetLog } from '../lib/store'
+import { CARDIO_SEC, useStore, workoutProgress, type SetLog } from '../lib/store'
 import { ExerciseAnimator } from './Visuals'
 import { Card, Pill, beep, fmtTime } from './ui'
 
@@ -47,20 +47,15 @@ export default function Workout() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="label">Full Body · Haftada 3 Gün</div>
-              <h2 className="mt-1 text-xl font-bold">Antrenman Modu</h2>
-              <p className="mt-1 text-[13px] text-mute">Büyük kaslar başta → izole kaslar ortada → karın ve kardiyo sonda.</p>
+              <h2 className="mt-1 text-xl font-bold">Antrenman</h2>
             </div>
             <div className="text-right">
               <div className="font-mono text-3xl font-bold tabular text-emerald">{Math.round(wp.pct * 100)}%</div>
-              <div className="text-[11px] text-mute">{wp.done}/{wp.total} set</div>
+              <div className="text-[11px] text-mute">{wp.done}/{wp.total} tamamlandı</div>
             </div>
           </div>
           <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/5">
             <div className="h-full rounded-full bg-emerald transition-all duration-500" style={{ width: `${wp.pct * 100}%` }} />
-          </div>
-          <div className="mt-4 flex items-start gap-2 rounded-xl border border-danger/20 bg-danger/[.06] p-3 text-[12px] leading-relaxed text-red-300">
-            <ShieldAlert size={16} className="mt-0.5 shrink-0" />
-            <span><b>Dumbbell Upright Row programdan kalıcı olarak çıkarıldı:</b> omuz ekleminde iç rotasyon + sıkışma (impingement) riski yaratır. Yan omuz için Lateral Raise yeterli.</span>
           </div>
         </Card>
 
@@ -75,11 +70,11 @@ export default function Workout() {
       <div className="lg:col-span-4">
         <div className="space-y-4 lg:sticky lg:top-24">
           <RestPanel rest={rest} onStart={(s) => setRest({ total: s, left: s, label: 'Manuel dinlenme' })} onStop={() => setRest(null)} />
-          <Card title="Sıralama Prensibi" icon={<Activity size={16} />}>
+          <Card title="Hareketler" icon={<ListOrdered size={16} />}>
             <ol className="space-y-2 text-[13px]">
               {EXERCISES.map((e, i) => {
                 const sets = day.workout.sets[e.id] ?? []
-                const done = e.isPlank ? day.workout.plankSec > 0 : sets.every((s) => s.done)
+                const done = sets.length > 0 && sets.every((s) => s.done)
                 return (
                   <li key={e.id}>
                     <button onClick={() => { setOpen(e.id); document.getElementById(`ex-${e.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
@@ -90,6 +85,15 @@ export default function Workout() {
                   </li>
                 )
               })}
+              <li>
+                <button onClick={() => document.getElementById('cardio')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  className="flex w-full items-center gap-2 text-left hover:text-white">
+                  {(() => { const ok = day.workout.cardioSec.slice(0, 3).every((x) => x >= CARDIO_SEC); return <>
+                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-mono text-[10px] ${ok ? 'bg-emerald text-ink' : 'bg-white/5 text-mute'}`}>{ok ? <Check size={11} /> : <Activity size={11} />}</span>
+                    <span className={`truncate ${ok ? 'text-mute line-through' : ''}`}>Kardiyo · 3 × 10 dk</span>
+                  </> })()}
+                </button>
+              </li>
             </ol>
           </Card>
         </div>
@@ -116,18 +120,18 @@ export default function Workout() {
 }
 
 function firstOpen(sets: Record<string, SetLog[]>) {
-  return EXERCISES.find((e) => !e.isPlank && !(sets[e.id] ?? []).every((s) => s.done))?.id ?? 'plank'
+  return EXERCISES.find((e) => !(sets[e.id] ?? []).every((s) => s.done))?.id ?? ''
 }
 
 function ExerciseCard({ ex, idx, open, onToggle, sets, onSet, onDone }: {
   ex: Exercise; idx: number; open: boolean; onToggle: () => void; sets: SetLog[]
   onSet: (id: string, i: number, p: Partial<SetLog>) => void; onDone: (ex: Exercise, i: number) => void
 }) {
-  const { state, setState, day } = useStore()
+  const { state, setState } = useStore()
   const custom = state.customGifs[ex.id]
   const [gifEdit, setGifEdit] = useState(false)
   const [gifUrl, setGifUrl] = useState(custom ?? '')
-  const doneCount = ex.isPlank ? (day.workout.plankSec > 0 ? 1 : 0) : sets.filter((s) => s.done).length
+  const doneCount = sets.filter((s) => s.done).length
   const complete = doneCount === ex.sets
 
   return (
@@ -180,8 +184,7 @@ function ExerciseCard({ ex, idx, open, onToggle, sets, onSet, onDone }: {
                 <div className="rounded-xl border border-amber/20 bg-amber/[.06] p-3 text-[13px] leading-relaxed text-amber-100/90">
                   <span className="mr-1 font-semibold text-amber">Form:</span>{ex.note}
                 </div>
-                {ex.isPlank ? <PlankTimer /> : (
-                  <div className="space-y-2">
+                <div className="space-y-2">
                     <div className="grid grid-cols-[2rem_1fr_1fr_3rem] gap-2 px-1 text-[10px] font-semibold uppercase tracking-wider text-mute">
                       <span>Set</span><span>Kilo (kg)</span><span>Tekrar</span><span />
                     </div>
@@ -198,9 +201,7 @@ function ExerciseCard({ ex, idx, open, onToggle, sets, onSet, onDone }: {
                         </motion.button>
                       </div>
                     ))}
-                    <p className="px-1 text-[11px] text-mute">✓ tikine bastığında {ex.restLabel} dinlenme sayacı otomatik başlar.</p>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
           </motion.div>
@@ -249,67 +250,25 @@ function RestPanel({ rest, onStart, onStop }: { rest: { total: number; left: num
   )
 }
 
-function useStopwatch() {
-  const [running, setRunning] = useState(false)
-  const [ms, setMs] = useState(0)
-  const startRef = useRef(0)
-  useEffect(() => {
-    if (!running) return
-    startRef.current = performance.now() - ms
-    let raf = 0
-    const tick = () => { setMs(performance.now() - startRef.current); raf = requestAnimationFrame(tick) }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [running])
-  return { running, ms, start: () => setRunning(true), stop: () => setRunning(false), reset: () => { setRunning(false); setMs(0) } }
-}
-
-function PlankTimer() {
-  const { state, setState, day, updateDay } = useStore()
-  const sw = useStopwatch()
-  const [newRecord, setNewRecord] = useState(false)
-  const sec = Math.floor(sw.ms / 1000)
-  const finish = () => {
-    sw.stop()
-    if (sec <= 0) return
-    updateDay((d) => ({ ...d, workout: { ...d.workout, plankSec: Math.max(d.workout.plankSec, sec) } }))
-    if (sec > state.plankRecord) { setState((s) => ({ ...s, plankRecord: sec })); setNewRecord(true); beep(1320, 150, 2) }
-  }
-  return (
-    <div className="rounded-2xl border border-white/5 bg-ink/60 p-4 text-center">
-      <div className="font-mono text-6xl font-bold tabular tracking-tight" style={{ color: sw.running ? '#10B981' : '#E5E7EB' }}>
-        {fmtTime(sec)}<span className="text-2xl text-mute">.{String(Math.floor((sw.ms % 1000) / 100))}</span>
-      </div>
-      <div className="mt-2 flex items-center justify-center gap-4 text-xs text-mute">
-        <span className="flex items-center gap-1"><Trophy size={13} className="text-amber" /> Rekor: <b className="font-mono text-slate-200">{fmtTime(state.plankRecord)}</b></span>
-        {day.workout.plankSec > 0 && <span>Bugün: <b className="font-mono text-slate-200">{fmtTime(day.workout.plankSec)}</b></span>}
-      </div>
-      {newRecord && <div className="mt-2 text-sm font-semibold text-amber">🏆 Yeni rekor!</div>}
-      <div className="mt-4 flex justify-center gap-2">
-        {!sw.running ? (
-          <button className="btn btn-primary min-w-32 !py-3" onClick={() => { setNewRecord(false); sw.start() }}><Play size={18} /> {sw.ms ? 'Devam' : 'Başlat'}</button>
-        ) : (
-          <button className="btn min-w-32 bg-amber !py-3 text-ink" onClick={finish}><Pause size={18} /> Bitir</button>
-        )}
-        <button className="btn btn-ghost !py-3" onClick={sw.reset} aria-label="Sıfırla"><RotateCcw size={18} /></button>
-      </div>
-    </div>
-  )
-}
-
 function Cardio() {
   const { day, updateDay } = useStore()
   const [active, setActive] = useState<number | null>(null)
   const done = day.workout.cardioSec
-  const totalDone = done.reduce((a, b) => a + Math.min(b, 600), 0)
+  const totalDone = done.reduce((a, b) => a + Math.min(b, CARDIO_SEC), 0)
+  const allDone = [0, 1, 2].every((i) => (done[i] ?? 0) >= CARDIO_SEC)
+  const setPart = (i: number, sec: number) => updateDay((d) => { const cs = [...d.workout.cardioSec]; cs[i] = sec; return { ...d, workout: { ...d.workout, cardioSec: cs } } })
+  const toggle = (i: number) => { if (active === i) setActive(null); setPart(i, (done[i] ?? 0) >= CARDIO_SEC ? 0 : CARDIO_SEC) }
+  const toggleAll = () => {
+    setActive(null)
+    updateDay((d) => ({ ...d, workout: { ...d.workout, cardioSec: allDone ? [0, 0, 0] : [CARDIO_SEC, CARDIO_SEC, CARDIO_SEC] } }))
+  }
 
   useEffect(() => {
     if (active == null) return
     const t = setInterval(() => {
       updateDay((d) => {
         const c = [...d.workout.cardioSec]
-        c[active] = Math.min(600, (c[active] ?? 0) + 1)
+        c[active] = Math.min(CARDIO_SEC, (c[active] ?? 0) + 1)
         return { ...d, workout: { ...d.workout, cardioSec: c } }
       })
     }, 1000)
@@ -317,43 +276,56 @@ function Cardio() {
   }, [active, updateDay])
 
   useEffect(() => {
-    if (active == null || done[active] < 600) return
+    if (active == null || done[active] < CARDIO_SEC) return
     beep(880, 250, 3)
     setActive(active < 2 ? active + 1 : null)
   }, [active, done])
 
   const icons = [Footprints, Bike, Activity]
   return (
-    <Card title="Kardiyo Protokolü · 3 × 10 dk (Zone 2)" icon={<Dumbbell size={16} />} action={<Pill>{fmtTime(totalDone)} / 30:00</Pill>}>
-      <p className="mb-4 text-[13px] text-mute">Ağırlık ve karın biter bitmez — glikojen depoları boşaldığı için vücut doğrudan yağ yakımına geçer.</p>
+    <div id="cardio" className="scroll-mt-24">
+    <Card title="Kardiyo · 3 × 10 dk" icon={<Dumbbell size={16} />} action={<Pill color={allDone ? '#10B981' : '#94A3B8'}>{fmtTime(totalDone)} / 30:00</Pill>}>
       <div className="grid gap-3 md:grid-cols-3">
         {CARDIO.map((c, i) => {
           const Icon = icons[i]
           const sec = done[i] ?? 0
           const isOn = active === i
+          const finished = sec >= CARDIO_SEC
           return (
-            <div key={c.id} className={`rounded-2xl border p-3 transition ${isOn ? 'border-emerald/50 bg-emerald/[.06]' : sec >= 600 ? 'border-emerald/30' : 'border-white/5 bg-white/[.02]'}`}>
+            <div key={c.id} className={`rounded-2xl border p-3 transition ${isOn ? 'border-emerald/50 bg-emerald/[.06]' : finished ? 'border-emerald/40 bg-emerald/[.04]' : 'border-white/5 bg-white/[.02]'}`}>
               <ExerciseAnimator dbId={c.dbId} muscles={['cardio', 'quads']} motion="hold" className="mb-3 aspect-[4/3] w-full" />
               <div className="flex items-center gap-2 text-sm font-semibold"><Icon size={16} className="text-emerald" /> {i * 10}–{i * 10 + 10}. dk</div>
               <div className="mt-0.5 text-[13px]">{c.name}</div>
               <div className="font-mono text-[12px] text-emerald">{c.detail}</div>
               <div className="mt-1 text-[11px] text-mute">{c.tip}</div>
               <div className="mt-3 flex items-center justify-between">
-                <span className="font-mono text-2xl font-bold tabular">{fmtTime(600 - sec)}</span>
+                <span className={`font-mono text-2xl font-bold tabular ${finished ? 'text-emerald' : ''}`}>{finished ? 'Bitti' : fmtTime(CARDIO_SEC - sec)}</span>
                 <div className="flex gap-1.5">
-                  <button className={`btn !p-2 ${isOn ? 'bg-amber text-ink' : 'btn-primary'}`} onClick={() => setActive(isOn ? null : i)} aria-label={isOn ? 'Duraklat' : 'Başlat'}>
-                    {isOn ? <Pause size={16} /> : sec >= 600 ? <Check size={16} /> : <Play size={16} />}
-                  </button>
-                  <button className="btn btn-ghost !p-2" aria-label="Sıfırla" onClick={() => { if (isOn) setActive(null); updateDay((d) => { const cs = [...d.workout.cardioSec]; cs[i] = 0; return { ...d, workout: { ...d.workout, cardioSec: cs } } }) }}>
-                    <RotateCcw size={16} />
-                  </button>
+                  {!finished && (
+                    <button className={`btn !p-2.5 ${isOn ? 'bg-amber text-ink' : 'btn-ghost'}`} onClick={() => setActive(isOn ? null : i)} aria-label={isOn ? 'Duraklat' : 'Sayacı başlat'}>
+                      {isOn ? <Pause size={16} /> : <Play size={16} />}
+                    </button>
+                  )}
+                  {sec > 0 && !finished && (
+                    <button className="btn btn-ghost !p-2.5" aria-label="Sıfırla" onClick={() => { if (isOn) setActive(null); setPart(i, 0) }}>
+                      <RotateCcw size={16} />
+                    </button>
+                  )}
+                  <motion.button whileTap={{ scale: 0.85 }} onClick={() => toggle(i)} aria-label={finished ? 'Tamamlandı işaretini kaldır' : 'Tamamladım'}
+                    className={`flex h-11 w-11 items-center justify-center rounded-xl border transition ${finished ? 'border-emerald bg-emerald text-ink' : 'border-white/10 bg-white/5 text-mute hover:border-emerald/50'}`}>
+                    <Check size={20} strokeWidth={3} />
+                  </motion.button>
                 </div>
               </div>
-              <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/5"><div className="h-full bg-emerald transition-all" style={{ width: `${(sec / 600) * 100}%` }} /></div>
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/5"><div className="h-full bg-emerald transition-all" style={{ width: `${Math.min(1, sec / CARDIO_SEC) * 100}%` }} /></div>
             </div>
           )
         })}
       </div>
+      <button onClick={toggleAll} className={`btn mt-4 w-full !py-3 ${allDone ? 'border border-emerald/40 bg-emerald/10 text-emerald' : 'btn-primary'}`}>
+        <Check size={18} strokeWidth={3} /> {allDone ? 'Kardiyo tamamlandı' : 'Kardiyoyu tamamladım'}
+      </button>
     </Card>
+    </div>
   )
 }

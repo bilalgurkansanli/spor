@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { CalendarDays, ChevronLeft, ChevronRight, Droplets, Dumbbell, Flame, GraduationCap, Moon, Pencil, Star } from 'lucide-react'
-import { EXERCISES } from '../lib/plan'
+import { EXERCISES, LEGACY_EXERCISES } from '../lib/plan'
 import { dayKcal, emptyDay, fromKey, todayKey, useStore, workoutProgress, type DayLog } from '../lib/store'
 import { Card, Pill, fmtTime } from './ui'
 import { kcalStatus } from './Today'
@@ -122,12 +122,12 @@ function DayDetail({ day }: { day: DayLog }) {
         <div>
           <div className="label mb-1.5">Antrenman detayı</div>
           <ul className="space-y-1 text-[12px]">
-            {EXERCISES.map((ex) => {
-              if (ex.isPlank) return day.workout.plankSec ? <li key={ex.id} className="flex justify-between"><span>{ex.name}</span><span className="font-mono">{fmtTime(day.workout.plankSec)}</span></li> : null
+            {[...EXERCISES, ...Object.entries(LEGACY_EXERCISES).map(([id, name]) => ({ id, name }))].map((ex) => {
               const done = (day.workout.sets[ex.id] ?? []).filter((s) => s.done)
               if (!done.length) return null
               return <li key={ex.id} className="flex justify-between gap-2"><span className="truncate text-slate-300">{ex.name}</span><span className="shrink-0 font-mono text-mute">{done.map((s) => `${s.kg || 'VA'}×${s.reps || '?'}`).join('  ')}</span></li>
             })}
+            {day.workout.plankSec > 0 && <li className="flex justify-between"><span className="text-slate-300">Plank</span><span className="font-mono text-mute">{fmtTime(day.workout.plankSec)}</span></li>}
             {day.workout.cardioSec.some((s) => s > 0) && <li className="flex justify-between"><span>Kardiyo</span><span className="font-mono">{fmtTime(day.workout.cardioSec.reduce((a, b) => a + b, 0))}</span></li>}
           </ul>
         </div>

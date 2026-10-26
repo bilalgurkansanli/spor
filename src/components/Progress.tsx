@@ -116,7 +116,6 @@ export default function Progress() {
       <MeasureForm />
 
       <Card className="lg:col-span-8" title="Mezura · Bel / Göğüs / Kol" icon={<Ruler size={16} />}>
-        <p className="-mt-2 mb-3 text-[12px] text-mute">Tartı kas kazanımı yüzünden sabit kalabilir — bel küçülüyorsa doğru yoldasın.</p>
         {tape.length ? (
           <div className="grid gap-3 sm:grid-cols-3">
             {([['Bel', '#F59E0B', 'küçülmeli'], ['Göğüs', '#3B82F6', 'korunmalı'], ['Kol', '#A78BFA', 'büyümeli']] as const).map(([k, color, goal]) => {
@@ -199,7 +198,6 @@ function MeasureForm() {
         {inp('weight', 'Kilo', 'kg')}{inp('waist', 'Bel', 'cm')}{inp('chest', 'Göğüs', 'cm')}{inp('arm', 'Kol', 'cm')}
       </div>
       <button className="btn btn-primary mt-4 w-full" onClick={save}><Plus size={16} /> Kaydet</button>
-      <p className="mt-3 text-[11px] leading-relaxed text-mute">İpucu: Haftada 1 kez, sabah aç karnına ve tuvaletten sonra ölç. Bel ölçümünü göbek hizasından al.</p>
     </Card>
   )
 }

@@ -83,12 +83,15 @@ export function dayKcal(day: DayLog) {
   return day.meals.reduce((a, m) => a + m.kcal, 0)
 }
 
+export const CARDIO_SEC = 600
+
 export function workoutProgress(w: WorkoutLog) {
   let done = 0, total = 0
   for (const ex of EXERCISES) {
-    if (ex.isPlank) { total++; if (w.plankSec > 0) done++; continue }
     for (const s of w.sets[ex.id] ?? []) { total++; if (s.done) done++ }
   }
+  // Kardiyo: 3 bölüm, her biri tamamlandı tikiyle (ya da 10 dk sayaçla) sayılır
+  for (let i = 0; i < 3; i++) { total++; if ((w.cardioSec[i] ?? 0) >= CARDIO_SEC) done++ }
   return { done, total, pct: total ? done / total : 0 }
 }
 
