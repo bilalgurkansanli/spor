@@ -83,6 +83,12 @@ export const EXERCISES: Exercise[] = [
     dbId: 'Side_Lateral_Raise', muscles: ['delts'], motion: 'raise', youtube: yt('dumbbell lateral raise'),
   },
   {
+    id: 'upright-row', name: 'Dumbbell Upright Row', target: 'Yan Omuz & Trapez', sets: 3, reps: '10-12',
+    start: '7.5-10 kg', startKg: 7.5, rest: 60, restLabel: '60 sn',
+    note: 'Dambılları gövdeye yakın yukarı çek, dirsekler bileklerden önde ve yukarıda olsun. Dirsekleri omuz hizasında durdur, daha yukarı çıkma. Kontrollü indir.',
+    dbId: 'Standing_Dumbbell_Upright_Row', muscles: ['delts'], motion: 'raise', youtube: yt('dumbbell upright row'),
+  },
+  {
     id: 'pushdown', name: 'Cable Triceps Pushdown', target: 'Arka Kol (Triceps)', sets: 3, reps: '12',
     start: '40-45 kg', startKg: 40, rest: 60, restLabel: '60 sn',
     note: 'Dirsekleri gövde yanına sabitle, sadece ön kol hareket etsin, en altta triceps\'i tam kilitle.',

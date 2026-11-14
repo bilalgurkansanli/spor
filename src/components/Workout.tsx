@@ -2,15 +2,24 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Activity, Bike, Check, ChevronDown, Dumbbell, Footprints, Link2, ListOrdered, Pause, Play, RotateCcw, Timer, Youtube, X } from 'lucide-react'
 import { CARDIO, EXERCISES, type Exercise } from '../lib/plan'
-import { CARDIO_SEC, useStore, workoutProgress, type SetLog } from '../lib/store'
+import { CARDIO_SEC, carryOverWeights, emptyDay, fromKey, lastSession, useStore, workoutProgress, type SetLog } from '../lib/store'
 import { ExerciseAnimator } from './Visuals'
 import { Card, Pill, beep, fmtTime } from './ui'
 
 export default function Workout() {
-  const { day, updateDay } = useStore()
+  const { day, updateDay, date, setState } = useStore()
   const [rest, setRest] = useState<{ total: number; left: number; label: string } | null>(null)
   const [open, setOpen] = useState<string>(() => firstOpen(day.workout.sets))
   const wp = workoutProgress(day.workout)
+
+  // Son antrenmandaki kiloları bugüne taşı (henüz başlanmamış hareketler için)
+  useEffect(() => {
+    setState((s) => {
+      const d = s.days[date] ?? emptyDay(date)
+      const w = carryOverWeights(s.days, date, d.workout)
+      return w ? { ...s, days: { ...s.days, [date]: { ...d, workout: w } } } : s
+    })
+  }, [date, setState])
 
   // Dinlenme sayacı
   useEffect(() => {
@@ -127,8 +136,10 @@ function ExerciseCard({ ex, idx, open, onToggle, sets, onSet, onDone }: {
   ex: Exercise; idx: number; open: boolean; onToggle: () => void; sets: SetLog[]
   onSet: (id: string, i: number, p: Partial<SetLog>) => void; onDone: (ex: Exercise, i: number) => void
 }) {
-  const { state, setState } = useStore()
+  const { state, setState, date } = useStore()
   const custom = state.customGifs[ex.id]
+  const last = lastSession(state.days, ex.id, date)
+  const lastDone = last?.sets.filter((x) => x.done) ?? []
   const [gifEdit, setGifEdit] = useState(false)
   const [gifUrl, setGifUrl] = useState(custom ?? '')
   const doneCount = sets.filter((s) => s.done).length
@@ -185,6 +196,12 @@ function ExerciseCard({ ex, idx, open, onToggle, sets, onSet, onDone }: {
                   <span className="mr-1 font-semibold text-amber">Form:</span>{ex.note}
                 </div>
                 <div className="space-y-2">
+                    {lastDone.length > 0 && (
+                      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 rounded-xl bg-white/[.03] px-3 py-2 text-[12px]">
+                        <span className="text-mute">Geçen sefer · {fromKey(last!.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}</span>
+                        <span className="font-mono text-slate-200">{lastDone.map((x) => `${x.kg || 'VA'}×${x.reps || '?'}`).join('  ')}</span>
+                      </div>
+                    )}
                     <div className="grid grid-cols-[2rem_1fr_1fr_3rem] gap-2 px-1 text-[10px] font-semibold uppercase tracking-wider text-mute">
                       <span>Set</span><span>Kilo (kg)</span><span>Tekrar</span><span />
                     </div>
@@ -193,7 +210,7 @@ function ExerciseCard({ ex, idx, open, onToggle, sets, onSet, onDone }: {
                         <span className="text-center font-mono text-sm text-mute">{i + 1}</span>
                         <input className="input !py-2.5 text-center font-mono text-base" inputMode="decimal" placeholder={ex.startKg == null ? 'VA' : String(ex.startKg)}
                           value={s.kg} onChange={(e) => onSet(ex.id, i, { kg: e.target.value })} />
-                        <input className="input !py-2.5 text-center font-mono text-base" inputMode="numeric" placeholder={ex.reps}
+                        <input className="input !py-2.5 text-center font-mono text-base" inputMode="numeric" placeholder={(last?.sets[i]?.done && last.sets[i].reps) || ex.reps}
                           value={s.reps} onChange={(e) => onSet(ex.id, i, { reps: e.target.value })} />
                         <motion.button whileTap={{ scale: 0.85 }} onClick={() => onDone(ex, i)} aria-label="Seti tamamladım"
                           className={`flex h-11 w-11 items-center justify-center rounded-xl border transition ${s.done ? 'border-emerald bg-emerald text-ink' : 'border-white/10 bg-white/5 text-mute hover:border-emerald/50'}`}>

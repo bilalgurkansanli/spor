@@ -135,7 +135,7 @@ function Onboarding() {
     ['🎯', `${TARGETS.kcal.toLocaleString('tr-TR')} kcal hedef + tampon bölge`],
     ['🧮', 'Kalori hesap makinesi · tampon bölge uyarıları'],
     ['💧', '3.5 L su · 8 saat uyku takibi'],
-    ['🏋️', '10 hareketlik full body + 30 dk kardiyo'],
+    ['🏋️', '11 hareketlik full body + 30 dk kardiyo'],
     ['📏', 'Kilo + mezura recomposition analizi'],
     ['🎓', 'Okul günü kurtarıcı menüleri'],
   ]

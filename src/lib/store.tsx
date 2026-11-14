@@ -83,6 +83,38 @@ export function dayKcal(day: DayLog) {
   return day.meals.reduce((a, m) => a + m.kcal, 0)
 }
 
+/** Bir hareketin, verilen tarihten önceki en son antrenmandaki setleri (en az bir seti işaretlenmiş gün) */
+export function lastSession(days: Record<string, DayLog>, exId: string, before: string) {
+  const keys = Object.keys(days).filter((k) => k < before).sort().reverse()
+  for (const k of keys) {
+    const sets = days[k].workout?.sets?.[exId]
+    if (sets?.some((x) => x.done)) return { date: k, sets }
+  }
+  return null
+}
+
+/** Bugün hiç seti işaretlenmemiş ve kilosu elle değiştirilmemiş hareketlere son antrenmanın kilolarını yazar.
+ *  Değişiklik yoksa null döner. */
+export function carryOverWeights(days: Record<string, DayLog>, date: string, w: WorkoutLog): WorkoutLog | null {
+  let changed = false
+  const sets = { ...w.sets }
+  for (const ex of EXERCISES) {
+    const cur = sets[ex.id] ?? []
+    if (cur.some((x) => x.done)) continue
+    const def = ex.startKg != null ? String(ex.startKg) : ''
+    if (!cur.every((x) => x.kg === def || x.kg === '')) continue
+    const last = lastSession(days, ex.id, date)
+    if (!last) continue
+    const done = last.sets.filter((x) => x.done)
+    const next = cur.map((x, i) => {
+      const src = last.sets[i]?.done ? last.sets[i] : done[done.length - 1]
+      return { ...x, kg: src?.kg || x.kg }
+    })
+    if (next.some((x, i) => x.kg !== cur[i].kg)) { sets[ex.id] = next; changed = true }
+  }
+  return changed ? { ...w, sets } : null
+}
+
 export const CARDIO_SEC = 600
 
 export function workoutProgress(w: WorkoutLog) {
