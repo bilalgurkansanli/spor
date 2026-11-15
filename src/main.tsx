@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App'
 import { StoreProvider } from './lib/store'
-import { registerSW } from './lib/push'
+import { registerSW } from './lib/sw'
 
 registerSW()
 

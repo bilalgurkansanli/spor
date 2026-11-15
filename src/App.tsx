@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { CalendarDays, ChevronLeft, ChevronRight, Download, Dumbbell, Flame, LayoutDashboard, LineChart, LogOut, Settings, Target, Upload } from 'lucide-react'
 import Today from './components/Today'
@@ -7,7 +7,6 @@ import Progress from './components/Progress'
 import History from './components/History'
 import { Card } from './components/ui'
 import { logout } from './components/Lock'
-import Notifications from './components/Notifications'
 import { exportJson, fromKey, normalize, streak, todayKey, useStore, type Profile } from './lib/store'
 import { TARGETS } from './lib/plan'
 
@@ -21,23 +20,8 @@ const TABS = [
 type Tab = (typeof TABS)[number]['id']
 
 export default function App() {
-  const { state, date, setDate, updateDay } = useStore()
+  const { state, date, setDate } = useStore()
   const [tab, setTab] = useState<Tab>('today')
-
-  // Bildirimdeki "500 ml içtim" düğmesi: ?do=morning-water ile açılış veya açık uygulamaya mesaj
-  useEffect(() => {
-    const tickWater = () => {
-      const today = todayKey()
-      setDate(today)
-      setTab('today')
-      updateDay((d) => (d.morningWater ? d : { ...d, morningWater: true, water: d.water + 500 }), today)
-    }
-    const params = new URLSearchParams(location.search)
-    if (params.get('do') === 'morning-water') { tickWater(); history.replaceState(null, '', location.pathname) }
-    const onMsg = (e: MessageEvent) => { if (e.data?.do === 'morning-water') tickWater() }
-    navigator.serviceWorker?.addEventListener('message', onMsg)
-    return () => navigator.serviceWorker?.removeEventListener('message', onMsg)
-  }, [setDate, updateDay])
 
   if (!state.profile) return <Onboarding />
 
@@ -203,7 +187,6 @@ function SettingsPage() {
           <div><ImportButton className="w-full" /></div>
         </div>
       </Card>
-      <Notifications />
       <Card title="Oturum" icon={<LogOut size={16} />}>
         <button className="btn btn-ghost w-full" onClick={logout}><LogOut size={16} /> Çıkış Yap</button>
       </Card>
