@@ -84,6 +84,6 @@ for (const sub of subs) {
     const hint = e.statusCode === 404 || e.statusCode === 410
       ? ' Abonelik geçersiz: uygulamada Bildirimleri yeniden aç ve yeni kodu PUSH_SUBSCRIPTION olarak kaydet.'
       : e.statusCode === 403 ? ' Anahtar uyuşmazlığı: VAPID_PRIVATE_KEY secret değerini kontrol et.' : ''
-    note('warning', 'Gönderilemedi', `${e.statusCode ?? ''} ${String(e.body ?? e.message).trim().replace(/.$/, '')}.${hint}`)
+    note('warning', 'Gönderilemedi', `${e.statusCode ?? ''} ${String(e.body ?? e.message).trim().replace(/\.$/, '')}.${hint}`)
   }
 }
